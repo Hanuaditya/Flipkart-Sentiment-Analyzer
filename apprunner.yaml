@@ -8,6 +8,7 @@ build:
       - python3 -m pip install -r requirements.txt
 
 run:
-  command: python3 -m streamlit run app.py --server.port 8080 --server.address 0.0.0.0
+  runtime-version: 3.11
+  command: /usr/local/bin/python3 -m streamlit run app.py --server.port 8080 --server.address 0.0.0.0
   network:
     port: 8080
