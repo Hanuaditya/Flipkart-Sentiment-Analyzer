@@ -1,3 +1,11 @@
+import os
+
+# --- AWS APP RUNNER PORT FIX ---
+PORT = os.environ.get("PORT", "8080")
+os.environ["STREAMLIT_SERVER_PORT"] = PORT
+os.environ["STREAMLIT_SERVER_ADDRESS"] = "0.0.0.0"
+os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -5,14 +13,6 @@ from bs4 import BeautifulSoup
 from textblob import TextBlob
 import plotly.express as px
 import time
-import os
-
-# -------- STREAMLIT AWS FIX --------
-# Make Streamlit run on AWS provided PORT
-PORT = int(os.environ.get("PORT", 8080))
-os.environ["STREAMLIT_SERVER_PORT"] = str(PORT)
-os.environ["STREAMLIT_SERVER_ADDRESS"] = "0.0.0.0"
-os.environ["STREAMLIT_BROWSER_GATHER_USAGE_STATS"] = "false"
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Flipkart Sentiment Analyzer", layout="wide")
@@ -28,7 +28,6 @@ def get_sentiment(text):
         return 'Neutral'
 
 def load_demo_data():
-    """Fallback data so project NEVER crashes during evaluation"""
     return [
         {"Reviewer": "Aditya", "Rating": "5", "Review": "Best purchase of the year. Battery is amazing!", "Sentiment": "Positive"},
         {"Reviewer": "Rahul", "Rating": "1", "Review": "Waste of money. Heating issues.", "Sentiment": "Negative"},
@@ -39,7 +38,7 @@ def load_demo_data():
 
 def scrape_flipkart(url):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": "Mozilla/5.0"
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -66,9 +65,9 @@ def scrape_flipkart(url):
     except:
         return []
 
-# --- MAIN UI ---
+# --- UI ---
 st.title("🛒 Flipkart Sentiment Analysis")
-st.caption("Flipkart has anti-bot mechanisms. If scraping fails, the app switches to Demo Mode for evaluation.")
+st.caption("If scraping fails, app switches to Demo Mode (for evaluation reliability).")
 
 url = st.text_input("Enter Flipkart Product URL:")
 
@@ -86,25 +85,18 @@ if st.button("Analyze Reviews"):
 
         df = pd.DataFrame(data)
 
-        # Metrics
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Reviews", len(df))
         col2.metric("Positive", len(df[df['Sentiment']=='Positive']))
         col3.metric("Negative", len(df[df['Sentiment']=='Negative']))
 
-        # Pie Chart
         fig = px.pie(
             df,
             names='Sentiment',
             title='Sentiment Distribution',
             color='Sentiment',
-            color_discrete_map={
-                'Positive':'green',
-                'Negative':'red',
-                'Neutral':'gray'
-            }
+            color_discrete_map={'Positive':'green','Negative':'red','Neutral':'gray'}
         )
         st.plotly_chart(fig)
 
-        # Data Table
         st.dataframe(df)
